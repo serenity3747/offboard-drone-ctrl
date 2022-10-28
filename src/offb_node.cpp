@@ -106,7 +106,7 @@ void targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
 
     double cur_yaw=yawfromQuaternion(cur_local.pose.orientation.x,cur_local.pose.orientation.y,cur_local.pose.orientation.z,cur_local.pose.orientation.w);
     double lookat_yaw=atan2((lookat_point.y-cur_local.pose.position.y),(lookat_point.x-cur_local.pose.position.x));
-    
+
     double error_yaw;
 
     error_yaw=lookat_yaw-cur_yaw;
