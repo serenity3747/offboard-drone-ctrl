@@ -3,7 +3,7 @@
 #include <cmath>
 
 
-float Kp=0.5;
+float Kp=0.3;
 
 // state indicate
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
