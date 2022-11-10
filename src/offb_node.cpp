@@ -113,13 +113,13 @@ void targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
     
     setYaw(cur_yaw+Kp*error_yaw);
 }
-
+//position 설정
 void setPosition(double xx,double yy,double zz){
     targetLocal.pose.position.x=xx;
     targetLocal.pose.position.y=yy;
     targetLocal.pose.position.z=zz;
 }
-
+//yaw -> quaternion 설정
 void setYaw(double rad){
     geometry_msgs::Quaternion Q=tf::createQuaternionMsgFromYaw(rad);
 
@@ -128,7 +128,7 @@ void setYaw(double rad){
     targetLocal.pose.orientation.z=Q.z;
     targetLocal.pose.orientation.w=Q.w;
 }
-
+// quaternion에서 yaw를 추출함
 double yawfromQuaternion(double x, double y ,double z ,double w){
         tf::Quaternion q(
         x,y,z,w
