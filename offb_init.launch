@@ -21,28 +21,69 @@
         <arg name="paused" value="$(arg paused)"/>
     </include>
     
-    <arg name="fcu_url" default="udp://:14540@localhost:14580"/>
-    <!-- PX4 SITL and vehicle spawn -->
-    <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-        <arg name="x" value="0"/>
-        <arg name="y" value="0"/>
-        <arg name="z" value="0"/>
-        <arg name="R" value="0"/>
-        <arg name="P" value="0"/>
-        <arg name="Y" value="0"/>
-        <!-- <arg name="est" value="$(arg est)"/> -->
-        <arg name="vehicle" value="$(arg vehicle)"/>
-        <arg name="mavlink_udp_port" value="14540"/>
-        <!-- <arg name="mavlink_tcp_port" value="4760"/> -->
-        <arg name="ID" value="0"/>
-    </include>
-    <!-- MAVROS -->
-    <include file="$(find mavros)/launch/px4.launch">
-        <arg name="fcu_url" value="$(arg fcu_url)"/>
-        <arg name="gcs_url" value=""/>
-        <arg name="tgt_system" value="1"/>
-        <arg name="tgt_component" value="1"/>
-    </include>
 
-    <node pkg="offb" type="offb_node" name="offb_node" />
+
+    <!--UAV0 -->
+    <group ns="uav0">
+        <!--MAVROS vehicle configs -->
+        <arg name="ID" value="0"/>
+        <arg name="fcu_url" default="udp://:14540@localhost:14580"/>
+        <!-- PX4 SITL and vehicle spawn -->
+         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="0"/>
+            <arg name="y" value="0"/>
+            <arg name="z" value="0"/>
+            <arg name="R" value="0"/>
+            <arg name="P" value="0"/>
+            <arg name="Y" value="0"/>
+            <!-- <arg name="est" value="$(arg est)"/> -->
+            <arg name="vehicle" value="$(arg vehicle)"/>
+            <arg name="mavlink_udp_port" value="14540"/>
+            <!-- <arg name="mavlink_tcp_port" value="4760"/> -->
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+        <!-- MAVROS -->
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+        <node pkg="offb" type="offb_node" name="offb_node" />
+    </group>
+ 
+<!-- UAV1 -->
+    <group ns="uav1">
+        <!-- MAVROS and vehicle configs -->
+        <arg name="ID" value="1"/>
+        <arg name="fcu_url" default="udp://:14541@localhost:14581"/>
+        <!-- PX4 SITL and vehicle spawn -->
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="0"/>
+            <arg name="y" value="1"/>
+            <arg name="z" value="0"/>
+            <arg name="R" value="0"/>
+            <arg name="P" value="0"/>
+            <arg name="Y" value="0"/>
+            <arg name="vehicle" value="$(arg vehicle)"/>
+            <arg name="mavlink_udp_port" value="14541"/>
+            <!--<arg name="mavlink_tcp_port" value="4561"/>-->
+            <arg name="ID" value="$(arg ID)"/>
+           <!--> <arg name="gst_udp_port" value="$(eval 5600 + arg('ID'))"/>
+            <arg name="video_uri" value="$(eval 5600 + arg('ID'))"/>
+            <arg name="mavlink_cam_udp_port" value="$(eval 14530 + arg('ID'))"/>-->
+        </include>
+        <!-- MAVROS -->
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+        <node pkg="offb" type="offb_node" name="offb_node" />
+    </group>
+
+
+    
 </launch>
+

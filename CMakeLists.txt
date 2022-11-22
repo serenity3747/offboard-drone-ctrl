@@ -28,6 +28,3 @@ add_executable(offb_node src/offb_node.cpp)
 #add_dependencies(offb_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(offb_node ${catkin_LIBRARIES})
 
-add_executable(pose_node src/pose_node.cpp)
-#add_dependencies(pose_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(pose_node ${catkin_LIBRARIES})

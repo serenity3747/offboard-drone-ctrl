@@ -29,6 +29,8 @@ ros::Subscriber target_yaw;
 ros::Subscriber rel_Yaw_sub;
 ros::Subscriber Lookat;
 ros::Subscriber Lookat_pctrl;
+ros::Subscriber bf_position;
+
 
 ros::ServiceClient arming_client;
 ros::ServiceClient set_mode_client;
@@ -37,4 +39,5 @@ ros::ServiceClient set_mode_client;
 void setYaw(double);
 void setPosition(double,double,double);
 double yawfromQuaternion(double,double,double,double);
+void bodyframe(double,double);
 #endif

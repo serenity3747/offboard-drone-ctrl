@@ -2,8 +2,9 @@
 #include <offb/offb.h>
 #include <cmath>
 
-// asdfasdfasdf
+
 float Kp=0.5;
+double cur_yaw;
 
 // state indicate
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -29,10 +30,12 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 }
 
 
+
 // local position (PoseStamped) subscribe. 
 void localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
 	cur_local = *msg;
+    cur_yaw=yawfromQuaternion(cur_local.pose.orientation.x,cur_local.pose.orientation.y,cur_local.pose.orientation.z,cur_local.pose.orientation.w);
 }
 
 
@@ -82,7 +85,6 @@ void targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg){
     // tf::Matrix3x3 m(q);
     // double cur_roll,cur_pitch,cur_yaw;
     // m.getRPY(cur_roll,cur_pitch,cur_yaw);
-    double cur_yaw=yawfromQuaternion(cur_local.pose.orientation.x,cur_local.pose.orientation.y,cur_local.pose.orientation.z,cur_local.pose.orientation.w);
     setYaw(rad + cur_yaw);
 }
 // look at the (x,y) point. 
@@ -104,40 +106,41 @@ void targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
     lookat_point.x=msg->x;
     lookat_point.y=msg->y;
 
-    double cur_yaw=yawfromQuaternion(cur_local.pose.orientation.x,cur_local.pose.orientation.y,cur_local.pose.orientation.z,cur_local.pose.orientation.w);
     double lookat_yaw=atan2((lookat_point.y-cur_local.pose.position.y),(lookat_point.x-cur_local.pose.position.x));
 
-    double error_yaw;
 
-    error_yaw=lookat_yaw-cur_yaw;
+    double error_yaw=lookat_yaw-cur_yaw;
     
     setYaw(cur_yaw+Kp*error_yaw);
 }
-//position 설정
-void setPosition(double xx,double yy,double zz){
-    targetLocal.pose.position.x=xx;
-    targetLocal.pose.position.y=yy;
-    targetLocal.pose.position.z=zz;
-}
-//yaw -> quaternion 설정
-void setYaw(double rad){
-    geometry_msgs::Quaternion Q=tf::createQuaternionMsgFromYaw(rad);
 
-    targetLocal.pose.orientation.x=Q.x;
-    targetLocal.pose.orientation.y=Q.y;
-    targetLocal.pose.orientation.z=Q.z;
-    targetLocal.pose.orientation.w=Q.w;
+//bodyframe 기준으로 위치 제어
+void bodyframe_Position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+
+    bodyframe((*msg).pose.position.x,(*msg).pose.position.y);
+    targetLocal.pose.position.z=cur_local.pose.position.z;
+
+    targetLocal.pose.orientation.x=cur_local.pose.orientation.x;
+    targetLocal.pose.orientation.y=cur_local.pose.orientation.y;
+    targetLocal.pose.orientation.z=cur_local.pose.orientation.z;
+    targetLocal.pose.orientation.w=cur_local.pose.orientation.w;
+
 }
-// quaternion에서 yaw를 추출함
-double yawfromQuaternion(double x, double y ,double z ,double w){
-        tf::Quaternion q(
-        x,y,z,w
-        );
-    tf::Matrix3x3 m(q);
-    double roll,pitch,yaw;
-    m.getRPY(roll,pitch,yaw);
-    return yaw;
+
+
+void bf_pos_pctrl_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+
+    bodyframe(-((*msg).pose.position.x)*Kp, -((*msg).pose.position.y)*Kp);
+    targetLocal.pose.position.z=cur_local.pose.position.z;
+
+    targetLocal.pose.orientation.x=cur_local.pose.orientation.x;
+    targetLocal.pose.orientation.y=cur_local.pose.orientation.y;
+    targetLocal.pose.orientation.z=cur_local.pose.orientation.z;
+    targetLocal.pose.orientation.w=cur_local.pose.orientation.w;
+
 }
+
+
 
 geometry_msgs::PoseStamped pos;
 
@@ -165,6 +168,8 @@ int main(int argc, char **argv)
         ("look_at",10,targetYaw_Lookat_cb);
     Lookat_pctrl = nh.subscribe<geometry_msgs::Point>
         ("look_at_pctrl",10,targetYaw_Lookat_pctrl_cb);    
+    bf_position = nh.subscribe<geometry_msgs::PoseStamped>
+        ("bf_position",10,bodyframe_Position_cb);
 
     arming_client = nh.serviceClient<mavros_msgs::CommandBool>
         ("mavros/cmd/arming");
@@ -231,10 +236,40 @@ int main(int argc, char **argv)
 }
 
 
-void arming(){
-        offb_set_mode.request.custom_mode = "OFFBOARD";   
-        arm_cmd.request.value = true;
+
+//position 설정
+void setPosition(double xx,double yy,double zz){
+    targetLocal.pose.position.x=xx;
+    targetLocal.pose.position.y=yy;
+    targetLocal.pose.position.z=zz;
+}
+//yaw -> quaternion 설정
+void setYaw(double rad){
+    geometry_msgs::Quaternion Q=tf::createQuaternionMsgFromYaw(rad);
+
+    targetLocal.pose.orientation.x=Q.x;
+    targetLocal.pose.orientation.y=Q.y;
+    targetLocal.pose.orientation.z=Q.z;
+    targetLocal.pose.orientation.w=Q.w;
+}
+// quaternion에서 yaw를 추출함
+double yawfromQuaternion(double x, double y ,double z ,double w){
+        tf::Quaternion q(
+        x,y,z,w
+        );
+    tf::Matrix3x3 m(q);
+    double roll,pitch,yaw;
+    m.getRPY(roll,pitch,yaw);
+    return yaw;
 }
 
+//bodyframe 기준 앞으로 x 옆으로 y 움직임
+void bodyframe(double x, double y){
+    
+    double xx = cur_local.pose.position.x + x * cos(cur_yaw) - y * sin(cur_yaw);
+    double yy = cur_local.pose.position.y + x * sin(cur_yaw) + y * cos(cur_yaw);
+    setPosition(xx,yy,cur_local.pose.position.z);
 
+
+}
 
