@@ -1,11 +1,13 @@
 #include <ros/ros.h>
-//#include <offb/offb.h>
+#include <offb/offb.h>
 #include <cmath>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/CommandHome.h>
+#include <mavros_msgs/CommandTOL.h>
 #include <mavros_msgs/State.h>
 #include <tf/tf.h>
 #include <std_msgs/Float64.h>
@@ -13,42 +15,15 @@
 
 
 
-geometry_msgs::PoseStamped cur_local;
-mavros_msgs::SetMode offb_set_mode;
-mavros_msgs::CommandBool arm_cmd;
-mavros_msgs::State cur_state;
-geometry_msgs::PoseStamped pose;
-geometry_msgs::PoseStamped targetLocal;
-
-ros::Publisher local_pos_pub;
-
-ros::Subscriber state_sub;
-ros::Subscriber set_position;
-ros::Subscriber cur_local_sub;
-
-ros::Subscriber target_position;
-ros::Subscriber target_yaw;
-ros::Subscriber rel_Yaw_sub;
-ros::Subscriber Lookat;
-ros::Subscriber Lookat_pctrl;
-ros::Subscriber bf_position;
-ros::Subscriber bf_pos_pctrl;
-ros::Subscriber bf_yaw_pctrl;
-
-ros::ServiceClient arming_client;
-ros::ServiceClient set_mode_client;
+offb::offb();
 
 
-void setYaw(double);
-void setPosition(double,double,double);
-double yawfromQuaternion(double,double,double,double);
-void bodyframe(double,double);
 
-float Kp=0.5;
-double cur_yaw;
+
+
 
 // state indicate
-void state_cb(const mavros_msgs::State::ConstPtr& msg){
+void offb::state_cb(const mavros_msgs::State::ConstPtr& msg){
     	if (cur_state.connected != msg->connected)
 	{
 		if (msg->connected == true)
@@ -70,10 +45,24 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 	cur_state= *msg;
 }
 
+void offb::arming(const mavros_msgs::State::ConstPtr& state){
+    
+    mavros_msgs::CommandBool msg;
+	msg.request.value = state->armed;
+
+	if (arming_client.call(msg) && msg.response.success)
+		ROS_INFO_STREAM(msg.response.result);
+	else
+		ROS_ERROR_STREAM(vehicle_info_.vehicle_name_ << " failed to call arming service. " << msg.response.result);
+	return msg.response.success;
+}
+
+
+
 
 
 // local position (PoseStamped) subscribe. 
-void localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void offb::localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
 	cur_local = *msg;
     cur_yaw=yawfromQuaternion(cur_local.pose.orientation.x,cur_local.pose.orientation.y,cur_local.pose.orientation.z,cur_local.pose.orientation.w);
@@ -81,7 +70,7 @@ void localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 
 // move to x,y,z
-void targetPosition_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+void offb::targetPosition_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     // targetLocal.pose.position.x=(*msg).pose.position.x;
     // targetLocal.pose.position.y=(*msg).pose.position.y;
     // targetLocal.pose.position.z=(*msg).pose.position.z;
@@ -96,7 +85,7 @@ void targetPosition_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
 
 // yawing absolute radian, subscribe a degree value(std_msgs::Float64)
-void targetYaw_cb(const std_msgs::Float64::ConstPtr& msg){
+void offb::targetYaw_cb(const std_msgs::Float64::ConstPtr& msg){
     // targetLocal.pose.position.x=cur_local.pose.position.x;
     // targetLocal.pose.position.y=cur_local.pose.position.y;
     // targetLocal.pose.position.z=cur_local.pose.position.z;
@@ -108,7 +97,7 @@ void targetYaw_cb(const std_msgs::Float64::ConstPtr& msg){
 }
 
 // yawing relative radian, subscribe a degree value(std_msgs::Float64)
-void targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg){
+void offb::targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg){
     setPosition(cur_local.pose.position.x,cur_local.pose.position.y,cur_local.pose.position.z);
     double deg=msg->data;
     
@@ -126,7 +115,7 @@ void targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg){
     setYaw(rad + cur_yaw);
 }
 // look at the (x,y) point. 
-void targetYaw_Lookat_cb(const geometry_msgs::Point::ConstPtr& msg){
+void offb::targetYaw_Lookat_cb(const geometry_msgs::Point::ConstPtr& msg){
     geometry_msgs::Point lookat_point;
     lookat_point.x=msg->x;
     lookat_point.y=msg->y;
@@ -139,7 +128,7 @@ void targetYaw_Lookat_cb(const geometry_msgs::Point::ConstPtr& msg){
 }
 
 //p 제어를 위한 코드
-void targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
+void offb::targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
     geometry_msgs::Point lookat_point;
     lookat_point.x=msg->x;
     lookat_point.y=msg->y;
@@ -153,7 +142,7 @@ void targetYaw_Lookat_pctrl_cb(const geometry_msgs::Point::ConstPtr& msg){
 }
 
 //bodyframe 기준으로 위치 제어
-void bodyframe_Position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+void offb::bodyframe_Position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
     bodyframe((*msg).pose.position.x,(*msg).pose.position.y);
     targetLocal.pose.position.z=cur_local.pose.position.z;
@@ -166,7 +155,7 @@ void bodyframe_Position_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 }
 
 
-void bf_pos_pctrl_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+void offb::bf_pos_pctrl_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
     bodyframe(-((*msg).pose.position.x)*Kp, -((*msg).pose.position.y)*Kp);
     targetLocal.pose.position.z=cur_local.pose.position.z;
@@ -178,7 +167,7 @@ void bf_pos_pctrl_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
 }
 
-void bf_yaw_pctrl_cb(const std_msgs::Float64::ConstPtr& msg){
+void offb::bf_yaw_pctrl_cb(const std_msgs::Float64::ConstPtr& msg){
     setPosition(cur_local.pose.position.x,cur_local.pose.position.y,cur_local.pose.position.z);
 
     // tf::Quaternion q(
@@ -193,44 +182,89 @@ void bf_yaw_pctrl_cb(const std_msgs::Float64::ConstPtr& msg){
     setYaw((msg->data)*Kp + cur_yaw);
 }
 
-geometry_msgs::PoseStamped pos;
 
-int main(int argc, char **argv)
-{
-    
-    ros::init(argc, argv, "offb_node");
-    ros::NodeHandle nh;
-    
 
-    state_sub = nh.subscribe<mavros_msgs::State>
-        ("mavros/state", 10, state_cb);
-    local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
+
+void offb::VehicleInit(){
+    state_sub = nh_.subscribe<mavros_msgs::State>
+        ("mavros/state", 10, &offb::state_cb,this);
+    
+    local_pos_pub = nh_.advertise<geometry_msgs::PoseStamped>
         ("mavros/setpoint_position/local", 10);
 
-    cur_local_sub = nh.subscribe<geometry_msgs::PoseStamped> 
-        ("mavros/local_position/pose", 10, localPositionCB);
-    target_position = nh.subscribe<geometry_msgs::PoseStamped>
-        ("target_position",10,targetPosition_cb);
-    target_yaw = nh.subscribe<std_msgs::Float64>
-        ("target_yaw",10,targetYaw_cb);
-    rel_Yaw_sub = nh.subscribe<std_msgs::Float64>
-        ("rel_yaw",10,targetYaw_rel_cb);
+    cur_local_sub = nh_.subscribe<geometry_msgs::PoseStamped> 
+        ("mavros/local_position/pose", 10, &offb::localPositionCB,this);
+    target_position = nh_.subscribe<geometry_msgs::PoseStamped>
+        ("target_position",10,&offb::targetPosition_cb,this);
+    target_yaw = nh_.subscribe<std_msgs::Float64>
+        ("target_yaw",10,&offb::targetYaw_cb,this);
+    rel_Yaw_sub = nh_.subscribe<std_msgs::Float64>
+        ("rel_yaw",10,&offb::targetYaw_rel_cb,this);
     Lookat = nh.subscribe<geometry_msgs::Point>
-        ("look_at",10,targetYaw_Lookat_cb);
-    Lookat_pctrl = nh.subscribe<geometry_msgs::Point>
-        ("look_at_pctrl",10,targetYaw_Lookat_pctrl_cb);    
-    bf_position = nh.subscribe<geometry_msgs::PoseStamped>
-        ("bf_position",10,bodyframe_Position_cb);
-    bf_pos_pctrl = nh.subscribe<geometry_msgs::PoseStamped>
-        ("bf_pos_pctrl",10,bf_pos_pctrl_cb);    
-    bf_yaw_pctrl = nh.subscribe<std_msgs::Float64>
-        ("bf_yaw_pctrl",10,bf_yaw_pctrl_cb);
+        ("look_at",10,&offb::targetYaw_Lookat_cb,this);
+    Lookat_pctrl = nh_.subscribe<geometry_msgs::Point>
+        ("look_at_pctrl",10,&offb::targetYaw_Lookat_pctrl_cb,this);    
+    bf_position = nh_.subscribe<geometry_msgs::PoseStamped>
+        ("bf_position",10,&offb::bodyframe_Position_cb,this);
+    bf_pos_pctrl = nh_.subscribe<geometry_msgs::PoseStamped>
+        ("bf_pos_pctrl",10,&offb::bf_pos_pctrl_cb,this);    
+    bf_yaw_pctrl = nh_.subscribe<std_msgs::Float64>
+        ("bf_yaw_pctrl",10,&offb::bf_yaw_pctrl_cb,this);
 
-    arming_client = nh.serviceClient<mavros_msgs::CommandBool>
+    arming_client = nh_.serviceClient<mavros_msgs::CommandBool>
         ("mavros/cmd/arming");
-    set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
+    set_mode_client = nh_.serviceClient<mavros_msgs::SetMode>
         ("mavros/set_mode");
+    set_home_client_ = nh_.serviceClient<mavros_msgs::CommandHome>
+        ("mavros/cmd/set_home");
+	takeoff_client_ = nh_.serviceClient<mavros_msgs::CommandTOL>
+        ("mavros/cmd/takeoff");
+	land_client_ = nh_.serviceClient<mavros_msgs::CommandTOL>
+        ("mavros/cmd/land");
+}
 
+
+
+
+
+//position 설정
+void offb::setPosition(double xx,double yy,double zz){
+    targetLocal.pose.position.x=xx;
+    targetLocal.pose.position.y=yy;
+    targetLocal.pose.position.z=zz;
+}
+//yaw -> quaternion 설정
+void offb::setYaw(double rad){
+    geometry_msgs::Quaternion Q=tf::createQuaternionMsgFromYaw(rad);
+
+    targetLocal.pose.orientation.x=Q.x;
+    targetLocal.pose.orientation.y=Q.y;
+    targetLocal.pose.orientation.z=Q.z;
+    targetLocal.pose.orientation.w=Q.w;
+}
+// quaternion에서 yaw를 추출함
+double offb::yawfromQuaternion(double x, double y ,double z ,double w){
+        tf::Quaternion q(
+        x,y,z,w
+        );
+    tf::Matrix3x3 m(q);
+    double roll,pitch,yaw;
+    m.getRPY(roll,pitch,yaw);
+    return yaw;
+}
+
+//bodyframe 기준 앞으로 x 옆으로 y 움직임
+void offb::bodyframe(double x, double y){
+    
+    double xx = cur_local.pose.position.x + x * cos(cur_yaw) - y * sin(cur_yaw);
+    double yy = cur_local.pose.position.y + x * sin(cur_yaw) + y * cos(cur_yaw);
+    setPosition(xx,yy,cur_local.pose.position.z);
+
+
+}
+
+
+void offb::running(){
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
     
@@ -243,7 +277,7 @@ int main(int argc, char **argv)
     }
 
     geometry_msgs::PoseStamped pos;
-    pos.pose.position.x=0;pos.pose.position.y=0;pos.pose.position.z=2;
+    //pos.pose.position.x=0;pos.pose.position.y=0;pos.pose.position.z=2;
     for(int i = 100; ros::ok() && i > 0; --i){
         
         local_pos_pub.publish(pos);
@@ -252,12 +286,9 @@ int main(int argc, char **argv)
     }
         //send a few setpoints before starting
 
-    
-    mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
 
-    mavros_msgs::CommandBool arm_cmd;
-    arm_cmd.request.value = true;
+    offb::arming(&offb::cur_state);
 
     ros::Time last_request = ros::Time::now();
 
@@ -286,45 +317,4 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
-
-    return 0;
 }
-
-
-
-//position 설정
-void setPosition(double xx,double yy,double zz){
-    targetLocal.pose.position.x=xx;
-    targetLocal.pose.position.y=yy;
-    targetLocal.pose.position.z=zz;
-}
-//yaw -> quaternion 설정
-void setYaw(double rad){
-    geometry_msgs::Quaternion Q=tf::createQuaternionMsgFromYaw(rad);
-
-    targetLocal.pose.orientation.x=Q.x;
-    targetLocal.pose.orientation.y=Q.y;
-    targetLocal.pose.orientation.z=Q.z;
-    targetLocal.pose.orientation.w=Q.w;
-}
-// quaternion에서 yaw를 추출함
-double yawfromQuaternion(double x, double y ,double z ,double w){
-        tf::Quaternion q(
-        x,y,z,w
-        );
-    tf::Matrix3x3 m(q);
-    double roll,pitch,yaw;
-    m.getRPY(roll,pitch,yaw);
-    return yaw;
-}
-
-//bodyframe 기준 앞으로 x 옆으로 y 움직임
-void bodyframe(double x, double y){
-    
-    double xx = cur_local.pose.position.x + x * cos(cur_yaw) - y * sin(cur_yaw);
-    double yy = cur_local.pose.position.y + x * sin(cur_yaw) + y * cos(cur_yaw);
-    setPosition(xx,yy,cur_local.pose.position.z);
-
-
-}
-
