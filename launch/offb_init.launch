@@ -5,7 +5,7 @@
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
-    <arg name="world" default="$(find gazebo_ros)/launch/empty_world.launch"/>
+    <arg name="world" default="$(find offb)/launch/empty_world.launch"/>
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
     <arg name="debug" default="false"/>
@@ -13,9 +13,9 @@
     <arg name="paused" default="false"/>
 
     <!-- Gazebo sim -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <include file="$(find offb)/launch/empty_world.launch">
         <arg name="gui" value="$(arg gui)"/>
-        <arg name="world_name" value="$(arg world)"/>
+        <arg name="world_name" value="$(find offb)/worlds/bricks.world)"/>
         <arg name="debug" value="$(arg debug)"/>
         <arg name="verbose" value="$(arg verbose)"/>
         <arg name="paused" value="$(arg paused)"/>
@@ -49,7 +49,7 @@
             <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
             <arg name="tgt_component" value="1"/>
         </include>
-        <node pkg="offb" type="offb_node" name="offb_node" />
+        <node pkg="offb" type="offb_node" name="offb_node0" />
     </group>
  
 <!-- UAV1 -->
@@ -80,7 +80,7 @@
             <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
             <arg name="tgt_component" value="1"/>
         </include>
-        <node pkg="offb" type="offb_node" name="offb_node" />
+        <node pkg="offb" type="offb_node" name="offb_node1" />
     </group>
 
 

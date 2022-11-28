@@ -1,7 +1,48 @@
 #include <ros/ros.h>
-#include <offb/offb.h>
+//#include <offb/offb.h>
 #include <cmath>
 
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
+#include <mavros_msgs/CommandBool.h>
+#include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/State.h>
+#include <tf/tf.h>
+#include <std_msgs/Float64.h>
+
+
+
+
+geometry_msgs::PoseStamped cur_local;
+mavros_msgs::SetMode offb_set_mode;
+mavros_msgs::CommandBool arm_cmd;
+mavros_msgs::State cur_state;
+geometry_msgs::PoseStamped pose;
+geometry_msgs::PoseStamped targetLocal;
+
+ros::Publisher local_pos_pub;
+
+ros::Subscriber state_sub;
+ros::Subscriber set_position;
+ros::Subscriber cur_local_sub;
+
+ros::Subscriber target_position;
+ros::Subscriber target_yaw;
+ros::Subscriber rel_Yaw_sub;
+ros::Subscriber Lookat;
+ros::Subscriber Lookat_pctrl;
+ros::Subscriber bf_position;
+ros::Subscriber bf_pos_pctrl;
+ros::Subscriber bf_yaw_pctrl;
+
+ros::ServiceClient arming_client;
+ros::ServiceClient set_mode_client;
+
+
+void setYaw(double);
+void setPosition(double,double,double);
+double yawfromQuaternion(double,double,double,double);
+void bodyframe(double,double);
 
 float Kp=0.5;
 double cur_yaw;
@@ -68,9 +109,6 @@ void targetYaw_cb(const std_msgs::Float64::ConstPtr& msg){
 
 // yawing relative radian, subscribe a degree value(std_msgs::Float64)
 void targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg){
-    // targetLocal.pose.position.x=cur_local.pose.position.x;
-    // targetLocal.pose.position.y=cur_local.pose.position.y;
-    // targetLocal.pose.position.z=cur_local.pose.position.z;
     setPosition(cur_local.pose.position.x,cur_local.pose.position.y,cur_local.pose.position.z);
     double deg=msg->data;
     
@@ -140,7 +178,20 @@ void bf_pos_pctrl_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
 
 }
 
+void bf_yaw_pctrl_cb(const std_msgs::Float64::ConstPtr& msg){
+    setPosition(cur_local.pose.position.x,cur_local.pose.position.y,cur_local.pose.position.z);
 
+    // tf::Quaternion q(
+    //     cur_local.pose.orientation.x,
+    //     cur_local.pose.orientation.y,
+    //     cur_local.pose.orientation.z,
+    //     cur_local.pose.orientation.w
+    // );
+    // tf::Matrix3x3 m(q);
+    // double cur_roll,cur_pitch,cur_yaw;
+    // m.getRPY(cur_roll,cur_pitch,cur_yaw);
+    setYaw((msg->data)*Kp + cur_yaw);
+}
 
 geometry_msgs::PoseStamped pos;
 
@@ -170,6 +221,10 @@ int main(int argc, char **argv)
         ("look_at_pctrl",10,targetYaw_Lookat_pctrl_cb);    
     bf_position = nh.subscribe<geometry_msgs::PoseStamped>
         ("bf_position",10,bodyframe_Position_cb);
+    bf_pos_pctrl = nh.subscribe<geometry_msgs::PoseStamped>
+        ("bf_pos_pctrl",10,bf_pos_pctrl_cb);    
+    bf_yaw_pctrl = nh.subscribe<std_msgs::Float64>
+        ("bf_yaw_pctrl",10,bf_yaw_pctrl_cb);
 
     arming_client = nh.serviceClient<mavros_msgs::CommandBool>
         ("mavros/cmd/arming");

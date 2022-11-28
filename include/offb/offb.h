@@ -1,4 +1,4 @@
-#ifndef OFFB_H
+ #ifndef OFFB_H
 #define OFFB_H
 
 
@@ -10,6 +10,8 @@
 #include <mavros_msgs/State.h>
 #include <tf/tf.h>
 #include <std_msgs/Float64.h>
+
+Class
 
 geometry_msgs::PoseStamped cur_local;
 mavros_msgs::SetMode offb_set_mode;
@@ -30,7 +32,8 @@ ros::Subscriber rel_Yaw_sub;
 ros::Subscriber Lookat;
 ros::Subscriber Lookat_pctrl;
 ros::Subscriber bf_position;
-
+ros::Subscriber bf_pos_pctrl;
+ros::Subscriber bf_yaw_pctrl;
 
 ros::ServiceClient arming_client;
 ros::ServiceClient set_mode_client;
@@ -40,4 +43,7 @@ void setYaw(double);
 void setPosition(double,double,double);
 double yawfromQuaternion(double,double,double,double);
 void bodyframe(double,double);
+
 #endif
+
+
