@@ -11,7 +11,7 @@
 #include <tf/tf.h>
 #include <std_msgs/Float64.h>
 
-Class
+
 
 geometry_msgs::PoseStamped cur_local;
 mavros_msgs::SetMode offb_set_mode;
