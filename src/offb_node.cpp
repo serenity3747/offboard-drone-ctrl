@@ -15,11 +15,19 @@
 
 
 
-offb::offb();
+offb::offb(const VehicleInfo &vehicle_info)
+    :drone_info(vehicle_info),
+     nh_(ros::NodeHandle(drone_info.vehicle_name_))
 
 
+{
+    VehicleInit();
+}
 
-
+offb::~offb()
+{
+    release();
+}
 
 
 // state indicate
@@ -45,18 +53,36 @@ void offb::state_cb(const mavros_msgs::State::ConstPtr& msg){
 	cur_state= *msg;
 }
 
-void offb::arming(const mavros_msgs::State::ConstPtr& state){
+bool offb::arming(const bool armed){
     
     mavros_msgs::CommandBool msg;
-	msg.request.value = state->armed;
+	msg.request.value = armed;
 
 	if (arming_client.call(msg) && msg.response.success)
 		ROS_INFO_STREAM(msg.response.result);
 	else
-		ROS_ERROR_STREAM(vehicle_info_.vehicle_name_ << " failed to call arming service. " << msg.response.result);
+		ROS_ERROR_STREAM(drone_info.vehicle_name_<< " failed to call arming service. " << msg.response.result);
 	return msg.response.success;
 }
 
+bool offb::setMode(const std::string &current_mode)
+{
+	mavros_msgs::SetMode mode;
+	mode.request.custom_mode = current_mode;
+	if (((current_mode == "offboard") || (current_mode == "OFFBOARD")))
+	{
+		ROS_WARN("Please publish setpoint first");
+		return false;
+	}
+	else
+	{
+		if (set_mode_client.call(mode) && mode.response.mode_sent)
+			;
+		else
+			ROS_ERROR_STREAM(drone_info.vehicle_name_ << " failed to call set_mode service. " << mode.response.mode_sent);
+		return mode.response.mode_sent;
+	}
+}
 
 
 
@@ -200,7 +226,7 @@ void offb::VehicleInit(){
         ("target_yaw",10,&offb::targetYaw_cb,this);
     rel_Yaw_sub = nh_.subscribe<std_msgs::Float64>
         ("rel_yaw",10,&offb::targetYaw_rel_cb,this);
-    Lookat = nh.subscribe<geometry_msgs::Point>
+    Lookat = nh_.subscribe<geometry_msgs::Point>
         ("look_at",10,&offb::targetYaw_Lookat_cb,this);
     Lookat_pctrl = nh_.subscribe<geometry_msgs::Point>
         ("look_at_pctrl",10,&offb::targetYaw_Lookat_pctrl_cb,this);    
@@ -224,6 +250,27 @@ void offb::VehicleInit(){
 }
 
 
+void offb::release(){
+    state_sub.shutdown();
+    
+    local_pos_pub.shutdown();
+
+    cur_local_sub.shutdown();
+    target_position.shutdown();
+    target_yaw.shutdown();
+    rel_Yaw_sub.shutdown();
+    Lookat.shutdown();
+    Lookat_pctrl.shutdown();
+    bf_position.shutdown();
+    bf_pos_pctrl.shutdown();
+    bf_yaw_pctrl.shutdown();
+
+    arming_client.shutdown();
+    set_mode_client.shutdown();
+    set_home_client_ .shutdown();
+	takeoff_client_.shutdown();
+	land_client_.shutdown();
+}
 
 
 
@@ -265,56 +312,26 @@ void offb::bodyframe(double x, double y){
 
 
 void offb::running(){
-    //the setpoint publishing rate MUST be faster than 2Hz
-    ros::Rate rate(20.0);
     
 
 
-    // wait for FCU connection
-    while(ros::ok() && !cur_state.connected){
-        ros::spinOnce();
-        rate.sleep();
-    }
-
-    geometry_msgs::PoseStamped pos;
-    //pos.pose.position.x=0;pos.pose.position.y=0;pos.pose.position.z=2;
-    for(int i = 100; ros::ok() && i > 0; --i){
-        
-        local_pos_pub.publish(pos);
-        ros::spinOnce();
-        rate.sleep();
-    }
-        //send a few setpoints before starting
-
-    offb_set_mode.request.custom_mode = "OFFBOARD";
-
-    offb::arming(&offb::cur_state);
-
     ros::Time last_request = ros::Time::now();
 
-    while(ros::ok()){
+
+
         if( cur_state.mode != "OFFBOARD" &&
             (ros::Time::now() - last_request > ros::Duration(5.0))){
-            if( set_mode_client.call(offb_set_mode) &&
-                offb_set_mode.response.mode_sent){
-                ROS_INFO("Offboard enabled");
-            }
-            last_request = ros::Time::now();
-        } else {
+                offb::setMode(cur_state.mode);
+                last_request = ros::Time::now();
+        } 
+        else {
             if( !cur_state.armed &&
                 (ros::Time::now() - last_request > ros::Duration(5.0))){
-                if( arming_client.call(arm_cmd) &&
-                    arm_cmd.response.success){
-                    ROS_INFO("Vehicle armed");
-                }
+                offb::arming(cur_state.armed);
                 last_request = ros::Time::now();
             }
         }
         
         local_pos_pub.publish(targetLocal);
 
-        
-        ros::spinOnce();
-        rate.sleep();
-    }
 }

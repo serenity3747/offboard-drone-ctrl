@@ -22,7 +22,7 @@
     </include>
     
 
-    <arg name="num_drone" default="2"/>
+ 
 
 
     <!--UAV0 -->
@@ -50,6 +50,10 @@
             <arg name="gcs_url" value=""/>
             <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
             <arg name="tgt_component" value="1"/>
+        <node name="offb_node" pkg="offb" type="offb_node" output="screen" respawn="true">
+		    <param name="num_drone" value="UAV0"/>
+        </node>
+
         </include>
        
     </group>
@@ -81,13 +85,12 @@
             <arg name="gcs_url" value=""/>
             <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
             <arg name="tgt_component" value="1"/>
+        <node name="offb_node" pkg="offb" type="offb_node" output="screen" respawn="true">
+		    <param name="num_drone" value="UAV1"/>
+        </node>            
         </include>
         
     </group>
-    <node name="drone" pkg="offb" type="drone" output="screen" respawn="true">
-		<param name="num_drone" value="$(arg num_drone)"/>
-    </node>
 
-    
 </launch>
 

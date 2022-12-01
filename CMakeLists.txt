@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   mavros
+  mavros_msgs
+  geometry_msgs
 )
 
 catkin_package(
@@ -24,7 +26,9 @@ include_directories(
 )
 
 
-add_executable(offb_node src/offb_node.cpp)
+
+
+add_executable(offb_node src/offb_node.cpp src/main.cpp)
 #add_dependencies(offb_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(offb_node ${catkin_LIBRARIES})
 

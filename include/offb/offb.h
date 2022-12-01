@@ -1,5 +1,7 @@
- #ifndef OFFB_H
+#ifndef OFFB_H
 #define OFFB_H
+
+
 
 #include <iostream>
 #include <cstdlib>
@@ -14,21 +16,48 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
-#include <tf/tf.h>
+#include <std_msgs/Empty.h>
+#include <std_msgs/Bool.h>
+#include <geographic_msgs/GeoPoint.h>
+#include <geographic_msgs/GeoPoseStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Vector3.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Vector3.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/BatteryState.h>
+#include <mavros_msgs/CommandTOL.h>
+#include <mavros_msgs/CommandHome.h>
+#include <mavros_msgs/HomePosition.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
+#include <tf/tf.h>
+
+typedef struct vehicle_info
+{
+	std::string vehicle_name_;
+} VehicleInfo;
+
 
 
 class offb
 {
 private:
+
+public:
     ros::NodeHandle nh_;
+    VehicleInfo drone_info;
     
-    geometry_msgs::PoseStamped cur_local;
+    double Kp=0.5;
+
     mavros_msgs::SetMode offb_set_mode;
     mavros_msgs::CommandBool arm_cmd;
     mavros_msgs::State cur_state;
-    geometry_msgs::PoseStamped pose;
+
+    //geometry_msgs::PoseStamped pose;
+    geometry_msgs::PoseStamped cur_local;
+    double cur_yaw;
     geometry_msgs::PoseStamped targetLocal;
 
     ros::Publisher local_pos_pub;
@@ -58,12 +87,16 @@ private:
     double yawfromQuaternion(double,double,double,double);
     void bodyframe(double,double);
 
-    void VehicleInit()
+    void running();
 
-    void state_cb(const mavros_msgs::State::ConstPtr& msg);
-    void arming(const bool &arm_state);
+    void VehicleInit();
+    void release();
 
-    void localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& msg);
+    void state_cb(const mavros_msgs::State::ConstPtr &);
+    bool arming(const bool);
+	bool setMode(const std::string &);
+
+    void localPositionCB(const geometry_msgs::PoseStamped::ConstPtr& );
     void targetPosition_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void targetYaw_cb(const std_msgs::Float64::ConstPtr& msg);
     void targetYaw_rel_cb(const std_msgs::Float64::ConstPtr& msg);
@@ -75,21 +108,18 @@ private:
     
 
     geometry_msgs::PoseStamped pos;
-public:
-    offb();
-    offb()
 
 
 
 
-
+    offb(const vehicle_info &);
+    
     ~offb();
 };
 
 
 
-
-
+// std::vector<offb*> elysium;
 
 
 
