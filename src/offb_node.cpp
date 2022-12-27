@@ -49,24 +49,7 @@ double cur_yaw;
 
 // state indicate
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
-    	if (cur_state.connected != msg->connected)
-	{
-		if (msg->connected == true)
-			ROS_INFO_STREAM("connected");
-		else
-			ROS_WARN_STREAM("not connected");
-	}
-	if (cur_state.armed != msg->armed)
-	{
-		if (msg->armed == true)
-			ROS_INFO_STREAM("armed");
-		else
-			ROS_INFO_STREAM("disarmed");
-	}
-	if (cur_state.mode != msg->mode)
-	{
-		ROS_INFO_STREAM(msg->mode << "mode");
-	}
+
 	cur_state= *msg;
 }
 
@@ -205,7 +188,7 @@ int main(int argc, char **argv)
     state_sub = nh.subscribe<mavros_msgs::State>
         ("mavros/state", 10, state_cb);
     local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
-        ("mavros/setpoint_position/local", 10);
+        ("/uav0/mavros/setpoint_position/local", 10);
 
     cur_local_sub = nh.subscribe<geometry_msgs::PoseStamped> 
         ("mavros/local_position/pose", 10, localPositionCB);

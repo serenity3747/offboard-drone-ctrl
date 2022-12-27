@@ -44,6 +44,37 @@ void setPosition(double,double,double);
 double yawfromQuaternion(double,double,double,double);
 void bodyframe(double,double);
 
+
+//UAV2
+geometry_msgs::PoseStamped cur_local2;
+mavros_msgs::SetMode offb_set_mode2;
+mavros_msgs::CommandBool arm_cmd2;
+mavros_msgs::State cur_state2;
+geometry_msgs::PoseStamped pose2;
+geometry_msgs::PoseStamped targetLocal2;
+
+ros::Publisher local_pos_pub2;
+
+ros::Subscriber state_sub2;
+ros::Subscriber set_position2;
+ros::Subscriber cur_local_sub2;
+
+ros::Subscriber target_position2;
+ros::Subscriber target_yaw2;
+ros::Subscriber rel_Yaw_sub2;
+ros::Subscriber Lookat2;
+ros::Subscriber Lookat_pctrl2;
+ros::Subscriber bf_position2;
+ros::Subscriber bf_pos_pctrl2;
+ros::Subscriber bf_yaw_pctrl2;
+
+ros::ServiceClient arming_client2;
+ros::ServiceClient set_mode_client2;
+
+
+
+
+
 #endif
 
 
