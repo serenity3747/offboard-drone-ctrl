@@ -45,7 +45,7 @@ double yawfromQuaternion(double,double,double,double);
 void bodyframe(double,double);
 
 
-//UAV2
+//UAV1
 geometry_msgs::PoseStamped cur_local2;
 mavros_msgs::SetMode offb_set_mode2;
 mavros_msgs::CommandBool arm_cmd2;
@@ -72,7 +72,10 @@ ros::ServiceClient arming_client2;
 ros::ServiceClient set_mode_client2;
 
 
-
+void setYaw2(double);
+void setPosition2(double,double,double);
+double yawfromQuaternion2(double,double,double,double);
+void bodyframe2(double,double);
 
 
 #endif

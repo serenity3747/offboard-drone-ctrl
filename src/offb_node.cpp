@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <offb/offb.h>
+
 #include <cmath>
 
 #include <geometry_msgs/PoseStamped.h>
@@ -11,38 +11,38 @@
 #include <std_msgs/Float64.h>
 
 
+geometry_msgs::PoseStamped cur_local;
+mavros_msgs::SetMode offb_set_mode;
+mavros_msgs::CommandBool arm_cmd;
+mavros_msgs::State cur_state;
+geometry_msgs::PoseStamped pose;
+geometry_msgs::PoseStamped targetLocal;
+
+ros::Publisher local_pos_pub;
+
+ros::Subscriber state_sub;
+ros::Subscriber set_position;
+ros::Subscriber cur_local_sub;
+
+ros::Subscriber target_position;
+ros::Subscriber target_yaw;
+ros::Subscriber rel_Yaw_sub;
+ros::Subscriber Lookat;
+ros::Subscriber Lookat_pctrl;
+ros::Subscriber bf_position;
+ros::Subscriber bf_pos_pctrl;
+ros::Subscriber bf_yaw_pctrl;
+
+ros::ServiceClient arming_client;
+ros::ServiceClient set_mode_client;
 
 
-// geometry_msgs::PoseStamped cur_local;
-// mavros_msgs::SetMode offb_set_mode;
-// mavros_msgs::CommandBool arm_cmd;
-// mavros_msgs::State cur_state;
-// geometry_msgs::PoseStamped pose;
-// geometry_msgs::PoseStamped targetLocal;
-
-// ros::Publisher local_pos_pub;
-
-// ros::Subscriber state_sub;
-// ros::Subscriber set_position;
-// ros::Subscriber cur_local_sub;
-
-// ros::Subscriber target_position;
-// ros::Subscriber target_yaw;
-// ros::Subscriber rel_Yaw_sub;
-// ros::Subscriber Lookat;
-// ros::Subscriber Lookat_pctrl;
-// ros::Subscriber bf_position;
-// ros::Subscriber bf_pos_pctrl;
-// ros::Subscriber bf_yaw_pctrl;
-
-// ros::ServiceClient arming_client;
-// ros::ServiceClient set_mode_client;
+void setYaw(double);
+void setPosition(double,double,double);
+double yawfromQuaternion(double,double,double,double);
+void bodyframe(double,double);
 
 
-// void setYaw(double);
-// void setPosition(double,double,double);
-// double yawfromQuaternion(double,double,double,double);
-// void bodyframe(double,double);
 
 float Kp=0.5;
 double cur_yaw;
@@ -210,9 +210,9 @@ int main(int argc, char **argv)
         ("bf_yaw_pctrl",10,bf_yaw_pctrl_cb);
 
     arming_client = nh.serviceClient<mavros_msgs::CommandBool>
-        ("mavros/cmd/arming");
+        ("/uav0/mavros/cmd/arming");
     set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
-        ("mavros/set_mode");
+        ("/uav0/mavros/set_mode");
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);

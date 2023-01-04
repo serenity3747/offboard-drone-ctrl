@@ -1,6 +1,6 @@
 
     <!--UAV2 -->
-    <!--<group ns="uav1">-->
+    <group ns="uav1">
         <!--MAVROS vehicle configs -->
         <arg name="ID" value="1"/>
         <arg name="fcu_url" default="udp://:14541@localhost:14581"/>
@@ -27,5 +27,5 @@
         </include>
         <node pkg="offb" type="offb_node2" name="offb_node2" />
 
-    <!--</group>-->
+    </group>
  
