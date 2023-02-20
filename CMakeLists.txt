@@ -9,8 +9,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  mavros
+  
 )
+add_service_files(FILES cmdsrv.srv)
+
 
 catkin_package(
   INCLUDE_DIRS include

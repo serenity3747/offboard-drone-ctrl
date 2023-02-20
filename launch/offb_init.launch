@@ -50,6 +50,7 @@
             <arg name="tgt_component" value="1"/>
         </include>
          <node pkg="offb" type="offb_node" name="offb_node" />
+         
     </group>
 
     <!--UAV1 -->
@@ -81,6 +82,7 @@
         <node pkg="offb" type="offb_node2" name="offb_node2" />
 
     </group>
+
 
 
     

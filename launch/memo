@@ -1,5 +1,4 @@
-
-    <!--UAV2 -->
+    <!--UAV1 -->
     <group ns="uav1">
         <!--MAVROS vehicle configs -->
         <arg name="ID" value="1"/>
@@ -7,15 +6,15 @@
         <!-- PX4 SITL and vehicle spawn -->
          <include file="$(find px4)/launch/single_vehicle_spawn.launch">
             <arg name="x" value="0"/>
-            <arg name="y" value="1"/>
+            <arg name="y" value="2"/>
             <arg name="z" value="0"/>
             <arg name="R" value="0"/>
             <arg name="P" value="0"/>
             <arg name="Y" value="0"/>
             <!-- <arg name="est" value="$(arg est)"/> -->
             <arg name="vehicle" value="$(arg vehicle)"/>
-            <arg name="mavlink_udp_port" value="14761"/>
-            <arg name="mavlink_tcp_port" value="4761"/>
+            <arg name="mavlink_udp_port" value="14541"/>
+            <arg name="mavlink_tcp_port" value="4561"/>
             <arg name="ID" value="$(arg ID)"/>
         </include>
         <!-- MAVROS -->
@@ -28,4 +27,3 @@
         <node pkg="offb" type="offb_node2" name="offb_node2" />
 
     </group>
- 
