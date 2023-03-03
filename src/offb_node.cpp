@@ -17,8 +17,10 @@ mavros_msgs::CommandBool arm_cmd;
 mavros_msgs::State cur_state;
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped targetLocal;
+geometry_msgs::TwistStamped targetvel;
 
 ros::Publisher local_pos_pub;
+ros::Publisher local_vel_pub;
 
 ros::Subscriber state_sub;
 ros::Subscriber set_position;
@@ -41,7 +43,7 @@ void setYaw(double);
 void setPosition(double,double,double);
 double yawfromQuaternion(double,double,double,double);
 void bodyframe(double,double);
-
+void setVel(double,double,double);
 
 
 float Kp=0.5;
@@ -176,6 +178,14 @@ void bf_yaw_pctrl_cb(const std_msgs::Float64::ConstPtr& msg){
     setYaw((msg->data)*Kp + cur_yaw);
 }
 
+
+
+
+
+void vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
+    setVel(msg->twist.linear.x,msg->twist.linear.y,msg->twist.linear.z);
+}
+
 geometry_msgs::PoseStamped pos;
 
 int main(int argc, char **argv)
@@ -189,7 +199,10 @@ int main(int argc, char **argv)
         ("mavros/state", 10, state_cb);
     local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
         ("/uav0/mavros/setpoint_position/local", 10);
-
+    
+    local_vel_pub = nh.advertise<geometry_msgs::TwistStamped>
+        ("/uav0/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+    
     cur_local_sub = nh.subscribe<geometry_msgs::PoseStamped> 
         ("mavros/local_position/pose", 10, localPositionCB);
     target_position = nh.subscribe<geometry_msgs::PoseStamped>
@@ -264,6 +277,8 @@ int main(int argc, char **argv)
         }
         
         local_pos_pub.publish(targetLocal);
+        // if()
+        // local_vel_pub.publish(targetvel);
 
         
         ros::spinOnce();
@@ -310,4 +325,8 @@ void bodyframe(double x, double y){
 
 
 }
-
+void setVel(double vx, double vy, double vz){
+    targetvel.twist.linear.x=vx;
+    targetvel.twist.linear.y=vy;
+    targetvel.twist.linear.z=vz;
+}
