@@ -10,7 +10,7 @@
 #include <tf/tf.h>
 #include <std_msgs/Float64.h>
 
-#include "cmdsrv.h"
+// #include "offb/cmdsrv.h""
 
 #define height 4
 #define xmargin 1.7
@@ -18,7 +18,6 @@
 #define positionerror 0.05
 
 geometry_msgs::Point leftlower,rightupper;
-geometry_msgs::PoseStamped uav0,uav1;
 geometry_msgs::PoseStamped cur_local0,cur_local1;
 geometry_msgs::PoseStamped uav0_target;
 geometry_msgs::PoseStamped uav1_target;
@@ -33,11 +32,18 @@ geometry_msgs::PoseStamped uav1_target;
 // }
 
 
-void cur_positionCB0(geometry_msgs::PoseStamped::Constptr& msg){
+class values{
+    public:
+    
+    
+};
+
+
+void cur_positionCB0(geometry_msgs::PoseStamped::ConstPtr& msg){
     cur_local0=*msg;
 }
 
-void cur_positionCB1(geometry_msgs::PoseStamped::Constptr& msg){
+void cur_positionCB1(geometry_msgs::PoseStamped::ConstPtr& msg){
     cur_local1=*msg;
 }
 void uav0(float x, float y){
@@ -57,6 +63,13 @@ int main(int argc, char **argv)
     
     ros::init(argc, argv, "control_node");
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
+
+    nh_private.getParam("leftlower_x",leftlower.x);
+    nh_private.getParam("leftlower_y",leftlower.y);
+    nh_private.getParam("rightupper_x",rightupper.x);
+    nh_private.getParam("rightupper_y",rightupper.y);
+
 
     ros::Publisher targetpub0 = nh.advertise<geometry_msgs::PoseStamped>
         ("uav0/target_position",1);
@@ -70,8 +83,8 @@ int main(int argc, char **argv)
     ros::Subscriber cur_position1 = nh.subscribe<geometry_msgs::PoseStamped> 
         ("uav1/mavros/local_position/pose", 10, cur_positionCB1);    
 
-    ros::ServiceServer cmd = nh.advertiseService<offb::cmdsrv>
-        ("cmdsrv",ctrl_func); 
+    // ros::ServiceServer cmd = nh.advertiseService<offb::cmdsrv>
+    //     ("cmdsrv",ctrl_func); 
 
     //시작점으로가기
     uav0((leftlower.x+rightupper.x)/2-xmargin,leftlower.y+ymargin);

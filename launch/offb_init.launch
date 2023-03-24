@@ -84,6 +84,9 @@
     </group>
 
 
+<node pkg="offb" type="control_node" name="control_node">
+    <rosparam command="load" file="$(find offb)/resource/scenario_1.yaml"/>
+</node>
 
     
 </launch>
