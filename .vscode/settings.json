@@ -12,5 +12,9 @@
         "numeric": "cpp",
         "ratio": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "python.analysis.extraPaths": [
+        "/home/juho/catkin_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
 }
