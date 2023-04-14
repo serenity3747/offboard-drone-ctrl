@@ -1,4 +1,7 @@
-leftlower_x : 0
-leftlower_y : 0
-rightupper_x : 20
-rightupper_y : 10
+rightlower_x: 0.0
+rightlower_y: 0.0
+leftupper_x: 2.0
+leftupper_y: -2.0
+linear_x: 1
+linear_y: 0
+linear_z: 0

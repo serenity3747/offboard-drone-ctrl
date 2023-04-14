@@ -4,6 +4,7 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
@@ -18,8 +19,11 @@ mavros_msgs::CommandBool arm_cmd2;
 mavros_msgs::State cur_state2;
 geometry_msgs::PoseStamped pose2;
 geometry_msgs::PoseStamped targetLocal2;
+geometry_msgs::TwistStamped targetvel2;
 
 ros::Publisher local_pos_pub2;
+ros::Publisher local_vel_pub2;
+
 
 ros::Subscriber state_sub2;
 ros::Subscriber set_position2;
@@ -33,6 +37,7 @@ ros::Subscriber Lookat_pctrl2;
 ros::Subscriber bf_position2;
 ros::Subscriber bf_pos_pctrl2;
 ros::Subscriber bf_yaw_pctrl2;
+ros::Subscriber target_vel2;
 
 ros::ServiceClient arming_client2;
 ros::ServiceClient set_mode_client2;
@@ -42,7 +47,7 @@ void setYaw2(double);
 void setPosition2(double,double,double);
 double yawfromQuaternion2(double,double,double,double);
 void bodyframe2(double,double);
-
+void setVel2(double,double,double);
 
 
 float Kp2=0.5;
@@ -176,6 +181,10 @@ void bf_yaw_pctrl_cb2(const std_msgs::Float64::ConstPtr& msg){
     // m.getRPY(cur_roll,cur_pitch,cur_yaw);
     setYaw2((msg->data)*Kp2 + cur_yaw2);
 }
+void vel_cb2(const geometry_msgs::TwistStamped::ConstPtr& msg){
+    setVel2(msg->twist.linear.x,msg->twist.linear.y,msg->twist.linear.z);
+}
+
 
 geometry_msgs::PoseStamped pos;
 
@@ -209,6 +218,8 @@ int main(int argc, char **argv)
         ("bf_pos_pctrl",10,bf_pos_pctrl_cb2);    
     bf_yaw_pctrl2 = nh2.subscribe<std_msgs::Float64>
         ("bf_yaw_pctrl",10,bf_yaw_pctrl_cb2);
+    target_vel2 = nh2.subscribe<geometry_msgs::TwistStamped>
+        ("target_vel",10,vel_cb2);
 
     arming_client2 = nh2.serviceClient<mavros_msgs::CommandBool>
         ("/uav1/mavros/cmd/arming");
@@ -346,4 +357,9 @@ void bodyframe2(double x, double y){
     setPosition2(xx,yy,cur_local2.pose.position.z);
 
 
+}
+void setVel2(double vx, double vy, double vz){
+    targetvel2.twist.linear.x=vx;
+    targetvel2.twist.linear.y=vy;
+    targetvel2.twist.linear.z=vz;
 }

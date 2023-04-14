@@ -4,6 +4,7 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
@@ -34,6 +35,7 @@ ros::Subscriber Lookat_pctrl;
 ros::Subscriber bf_position;
 ros::Subscriber bf_pos_pctrl;
 ros::Subscriber bf_yaw_pctrl;
+ros::Subscriber target_vel;
 
 ros::ServiceClient arming_client;
 ros::ServiceClient set_mode_client;
@@ -221,6 +223,9 @@ int main(int argc, char **argv)
         ("bf_pos_pctrl",10,bf_pos_pctrl_cb);    
     bf_yaw_pctrl = nh.subscribe<std_msgs::Float64>
         ("bf_yaw_pctrl",10,bf_yaw_pctrl_cb);
+    target_vel = nh.subscribe<geometry_msgs::TwistStamped>
+        ("target_vel",10,vel_cb);
+
 
     arming_client = nh.serviceClient<mavros_msgs::CommandBool>
         ("/uav0/mavros/cmd/arming");
@@ -278,7 +283,7 @@ int main(int argc, char **argv)
         
         local_pos_pub.publish(targetLocal);
         // if()
-        // local_vel_pub.publish(targetvel);
+        local_vel_pub.publish(targetvel);
 
         
         ros::spinOnce();

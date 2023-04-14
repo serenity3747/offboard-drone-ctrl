@@ -11,7 +11,9 @@
         "complex": "cpp",
         "numeric": "cpp",
         "ratio": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp"
     },
     "python.analysis.extraPaths": [
         "/home/juho/catkin_ws/devel/lib/python3/dist-packages",
