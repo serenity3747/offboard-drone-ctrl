@@ -12,13 +12,14 @@
 
 // #include "offb/cmdsrv.h"
 
-#define height 4
-#define xmargin 1.2/4*height
-#define ymargin 1.6/4*height
+// #define xmargin 1.2/4*height
+// #define ymargin 1.6/4*height
 #define positionerror 0.05
 #define position_diff_x 0
 #define position_diff_y -2
 
+float height = 4;
+float xmoving=height*3/8, ymoving=height*0.5;
 
 geometry_msgs::PoseStamped cur_local0,cur_local1;
 geometry_msgs::PoseStamped uav0_target;
@@ -52,11 +53,11 @@ class pubclass{
             targetpub1 = nh_.advertise<geometry_msgs::PoseStamped>
                 ("uav1/target_position",10);
 
-            targetpub0 = nh_.advertise<geometry_msgs::PoseStamped>
-                ("uav0/target_vel",10);
+            // targetpub0 = nh_.advertise<geometry_msgs::PoseStamped>
+            //     ("uav0/target_vel",10);
         
-            targetpub1 = nh_.advertise<geometry_msgs::PoseStamped>
-                ("uav1/target_vel",10);
+            // targetpub1 = nh_.advertise<geometry_msgs::PoseStamped>
+            //     ("uav1/target_vel",10);
 
 
 
@@ -70,6 +71,8 @@ class pubclass{
             //     targetpub0.publish(uav0_target);
             //     targetpub1.publish(uav1_target);
             //     }    
+
+
 
         }
 
@@ -91,41 +94,21 @@ class pubclass{
         }
 
 
-        void ready2start(){
-                uav0(rightlower.x-xmargin,(leftupper.y+rightlower.y)/2+ymargin);
-                uav1(rightlower.x+xmargin,(leftupper.y+rightlower.y)/2+ymargin);
-                targetpub0.publish(uav0_target);
-                targetpub1.publish(uav1_target);
+        // void ready2start(){
+        //         uav0(rightlower.x-xmargin,(leftupper.y+rightlower.y)/2+ymargin);
+        //         uav1(rightlower.x+xmargin,(leftupper.y+rightlower.y)/2+ymargin);
+        //         targetpub0.publish(uav0_target);
+        //         targetpub1.publish(uav1_target);
+        // }
+
+        void goTo0(){
+            targetpub0.publish(uav0_target);
         }
-        void runOp(){
-            // if(cur_local0.pose.position.x<(leftupper.x+rightlower.x)/2&&cur_local1.pose.position.x<(leftupper.x+rightlower.x)/2){
-            if(cur_local0.pose.position.x<leftupper.x&&cur_local1.pose.position.x<leftupper.x){
-                uav0(cur_local0.pose.position.x,leftupper.y-ymargin);
-                uav0(cur_local1.pose.position.x,leftupper.y-ymargin);
-                targetpub0.publish(uav0_target);
-                targetpub1.publish(uav1_target);
-                
-                if(cur_local0.pose.position.y<leftupper.y&&rightlower.y>cur_local1.pose.position.y){
-                    uav0(cur_local0.pose.position.x-xmargin*2,cur_local0.pose.position.y);
-                    uav1(cur_local1.pose.position.x+xmargin*2,cur_local1.pose.position.y);
-                    targetpub0.publish(uav0_target);
-                    targetpub1.publish(uav1_target);
-                }
-            }
-            else if(cur_local0.pose.position.x>(leftupper.x+rightlower.x)/2&&cur_local1.pose.position.x>(leftupper.x+rightlower.x)/2){
-                uav0(cur_local0.pose.position.x,rightlower.y+ymargin);
-                uav1(cur_local1.pose.position.x,rightlower.y+ymargin);
-                targetpub0.publish(uav0_target);
-                targetpub1.publish(uav1_target);
-                
-                if(cur_local0.pose.position.x>rightlower.x&&leftupper.x<cur_local1.pose.position.x){
-                    uav0(cur_local0.pose.position.x-xmargin*2,cur_local0.pose.position.y);
-                    uav1(cur_local1.pose.position.x+xmargin*2,cur_local1.pose.position.y);
-                    targetpub0.publish(uav0_target);
-                    targetpub1.publish(uav1_target);                    
-                }
-            }
+
+        void goTo1(){
+            targetpub1.publish(uav1_target);
         }
+
 
         void test(){
             uav0(rightlower.x,rightlower.y);
@@ -204,7 +187,7 @@ int main(int argc, char **argv)
         ("uav1/mavros/local_position/pose", 10, cur_positionCB1);    
     
     
-    pubclass pub;
+
 
 
     // ros::Publisher targetpub0 = nh.advertise<geometry_msgs::PoseStamped>
@@ -218,9 +201,7 @@ int main(int argc, char **argv)
     // ros::ServiceServer cmd = nh.advertiseService<offb::cmdsrv>
     //     ("cmdsrv",ctrl_func); 
 
-    //시작점으로가기
-    // pubclass.uav0((rightlower.x+leftupper.x)/2-xmargin,rightlower.y+ymargin);
-    // pubclass.uav1((rightlower.x+leftupper.x)/2+xmargin,rightlower.y+ymargin);
+
     // pubclass.ready2start();
 
     // while(cur_local0.pose.position.x-uav0_target.pose.position.x<positionerror&&cur_local0.pose.position.y-uav0_target.pose.position.y<positionerror&&cur_local1.pose.position.x-uav1_target.pose.position.x<positionerror&&cur_local1.pose.position.y-uav1_target.pose.position.y<positionerror){
@@ -231,18 +212,53 @@ int main(int argc, char **argv)
     //사이클 시작
     ros::Rate rate(20.0);
 
+    pubclass pub;
+
+                    
+    //시작점으로가기
+    pub.uav0(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2+ymoving);
+    pub.uav1(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2-ymoving);
+    while(abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2&&abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2){
+        pub.goTo0(); pub.goTo1();
+    }
+
+
+    bool count=0;
+
     while(ros::ok()){
-        // pub.runOp();
+        nh.getParam("/control_node/start",count);
 
+        if(1){
+            while(abs(pub.leftupper.y-cur_local0.pose.position.y)>0.1&&abs(pub.rightlower.y-cur_local1.pose.position.y)>0.1){
+                while(abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.1&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.1){
+                    pub.goTo0(); pub.goTo1();
+                }
+            
+                ros::Duration(0.1).sleep();
+                //imwrite();
+            
 
-        pub.test();
+                if(abs(uav0_target.pose.position.x-pub.leftupper.x)<0.1){
+                    uav0_target.pose.position.y+=ymoving;
+                    xmoving=-xmoving;
+                }
+                else{
+                    uav0_target.pose.position.x+=xmoving;
+                }
+                
+                if(abs(uav1_target.pose.position.x-pub.leftupper.x)<0.1){
+                    uav1_target.pose.position.y-=ymoving;
+                    xmoving=-xmoving;
+                }
+                else{
+                    uav1_target.pose.position.x+=xmoving;
+                }
+            }
+            nh.setParam("/control_node/start",false);
+        }
 
         ros::spinOnce();
         rate.sleep();
-        // if(cur_local0.pose.position.x<rightlower.x&&cur_local1.pose.position.x>leftupper.x){
-        //     pubclass.runOp();
-        //     break;
-        // }
 
     }
 

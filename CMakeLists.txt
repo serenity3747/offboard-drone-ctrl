@@ -44,5 +44,5 @@ add_executable(offb_node2 src/offb_node2.cpp)
 target_link_libraries(offb_node2 ${catkin_LIBRARIES})
 
 add_executable(control_node src/control_node.cpp)
-# add_dependencies(offb_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(offb_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(control_node ${catkin_LIBRARIES})
