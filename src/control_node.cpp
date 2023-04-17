@@ -80,9 +80,7 @@ class pubclass{
             uav0_target.pose.orientation.w=1;
             uav0_target.pose.orientation.x,uav0_target.pose.orientation.y,uav0_target.pose.orientation.z=0;
         }
-        void uav0(float linx, float liny ,float linz){
-            
-        }
+      
 
         void uav1(float x, float y){
             uav1_target.pose.position.x = x-position_diff_x;
@@ -134,10 +132,10 @@ class pubclass{
             uav1(leftupper.x,leftupper.y);
             // uav0(0,0);
             // uav1(2,-2);
-            // targetpub0.publish(uav0_target);
-            // targetpub1.publish(uav1_target);
-            velPub0.publish(uav0_veltarget);
-            velPub1.publish(uav1_veltarget);
+            targetpub0.publish(uav0_target);
+            targetpub1.publish(uav1_target);
+            // velPub0.publish(uav0_veltarget);
+            // velPub1.publish(uav1_veltarget);
         }
             // void test(){
             //     geometry_msgs::PoseStamped test;
@@ -157,8 +155,8 @@ class pubclass{
         ros::NodeHandle nh_;
         ros::Publisher targetpub0;
         ros::Publisher targetpub1;
-        ros::Publisher velPub0;
-        ros::Publisher velPub1;
+        // ros::Publisher velPub0;
+        // ros::Publisher velPub1;
 
 };
 

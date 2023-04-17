@@ -283,7 +283,7 @@ int main(int argc, char **argv)
         
         local_pos_pub.publish(targetLocal);
         // if()
-        local_vel_pub.publish(targetvel);
+        // local_vel_pub.publish(targetvel);
 
         
         ros::spinOnce();
