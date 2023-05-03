@@ -132,7 +132,19 @@ class pubclass{
             //     targetpub0.publish(uav0_target);
             //     targetpub1.publish(uav1_target);
             // }
-       
+        bool isArriving(){
+            if((fabs(uav0_target.pose.position.x - cur_local0.pose.position.x) < 0.5)
+            && (fabs(uav0_target.pose.position.y - cur_local0.pose.position.y) < 0.5)
+            && (fabs(uav0_target.pose.position.z - cur_local0.pose.position.z) < 0.5)
+            && (fabs(uav1_target.pose.position.x - cur_local1.pose.position.x) < 0.5)
+            && (fabs(uav1_target.pose.position.y - cur_local1.pose.position.y) < 0.5)
+            && (fabs(uav1_target.pose.position.z - cur_local1.pose.position.z) < 0.5)){
+                return true;
+            }
+
+            else return false;
+        }
+            
 
     private:
         ros::NodeHandle nh_;
@@ -218,6 +230,7 @@ int main(int argc, char **argv)
     //시작점으로가기
     pub.uav0(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2+ymoving);
     pub.uav1(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2-ymoving);
+    
     while(abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2&&abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2){
         pub.goTo0(); pub.goTo1();
     }
