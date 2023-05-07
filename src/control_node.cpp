@@ -307,6 +307,7 @@ int main(int argc, char **argv)
         }
 
 
+
         else if(flag&&mode){// 일자탐색
 
             for(int i=0; i<index; i++){
