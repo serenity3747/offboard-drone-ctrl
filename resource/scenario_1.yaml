@@ -1,5 +1,13 @@
+start: 1
+
+# mode 0 : zigzag / mode 1 : straight
+mode: 0
+
 rightlower_x: 0.0
-rightlower_y: 0.0
-leftupper_x: 40.0
-leftupper_y: 40.0
-start: false
+rightlower_y: -20.0
+leftupper_x: 10.0
+leftupper_y: 20.0
+
+height: 3
+Xmoving: 0.45
+Ymoving: 0.56

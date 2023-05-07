@@ -12,20 +12,23 @@
 
 // #include "offb/cmdsrv.h"
 
-// #define xmargin 1.2/4*height
-// #define ymargin 1.6/4*height
-#define positionerror 0.05
+
 #define position_diff_x 0
 #define position_diff_y -2
 
-float height = 4;
-float xmoving=height*3/8, ymoving=height*0.5;
+
 
 geometry_msgs::PoseStamped cur_local0,cur_local1;
 geometry_msgs::PoseStamped uav0_target;
 geometry_msgs::PoseStamped uav1_target;
 geometry_msgs::TwistStamped uav0_veltarget;
 geometry_msgs::TwistStamped uav1_veltarget;
+
+
+std_msgs::Float64 caputre_sign;
+float height=5,xmoving, ymoving;
+
+
 
 // void ctrl_func(offb::cmdsrv::Request &req,offb::cmdsrv::Response &res){
 //     rightlower.x=req->x1; //a1
@@ -39,10 +42,12 @@ geometry_msgs::TwistStamped uav1_veltarget;
 
 class pubclass{
     public:
-        // geometry_msgs::Point rightlower,leftupper;
         // geometry_msgs::PoseStamped cur_local0,cur_local1;
         // geometry_msgs::PoseStamped uav0_target;
         // geometry_msgs::PoseStamped uav1_target;
+        
+        
+
 
         geometry_msgs::Point rightlower,leftupper;    
 
@@ -61,20 +66,16 @@ class pubclass{
 
 
 
+
                 nh_.getParam("/control_node/rightlower_x",rightlower.x);
                 nh_.getParam("/control_node/rightlower_y",rightlower.y);
                 nh_.getParam("/control_node/leftupper_x",leftupper.x);
                 nh_.getParam("/control_node/leftupper_y",leftupper.y);
-    
-            // while(cur_local0.pose.position.x-uav0_target.pose.position.x<positionerror&&cur_local0.pose.position.y-uav0_target.pose.position.y<positionerror
-            //     &&cur_local1.pose.position.x-uav1_target.pose.position.x<positionerror &&cur_local1.pose.position.y-uav1_target.pose.position.y<positionerror){
-            //     targetpub0.publish(uav0_target);
-            //     targetpub1.publish(uav1_target);
-            //     }    
-
-
 
         }
+
+
+
 
         void uav0(float x, float y){
             uav0_target.pose.position.x = x;
@@ -187,7 +188,6 @@ int main(int argc, char **argv)
     
     ros::init(argc, argv, "control_node");
     ros::NodeHandle nh;
-    ros::NodeHandle nh_private("~");
 
 
 
@@ -198,119 +198,146 @@ int main(int argc, char **argv)
     ros::Subscriber cur_position1= nh.subscribe<geometry_msgs::PoseStamped> 
         ("uav1/mavros/local_position/pose", 10, cur_positionCB1);    
     
-    
+    ros::Publisher capture_sign_pub = nh.advertise<std_msgs::Float64>
+        ("/capture_now", 1);
 
+    caputre_sign.data = 0.0;    
 
-
-    // ros::Publisher targetpub0 = nh.advertise<geometry_msgs::PoseStamped>
-    //     ("uav0/target_position",1);
-    
-    // ros::Publisher targetpub1 = nh.advertise<geometry_msgs::PoseStamped>
-    //     ("uav1/target_position",1);
-    // ros::Subscriber cmd = nh.subscribe
-
-
-    // ros::ServiceServer cmd = nh.advertiseService<offb::cmdsrv>
-    //     ("cmdsrv",ctrl_func); 
-
-
-    // pubclass.ready2start();
-
-    // while(cur_local0.pose.position.x-uav0_target.pose.position.x<positionerror&&cur_local0.pose.position.y-uav0_target.pose.position.y<positionerror&&cur_local1.pose.position.x-uav1_target.pose.position.x<positionerror&&cur_local1.pose.position.y-uav1_target.pose.position.y<positionerror){
-    //     pubclass.targetpub0.publish(uav0_target);
-    //     pubclass.targetpub1.publish(uav1_target);
-    // }
-    
     //사이클 시작
     ros::Rate rate(20.0);
 
     pubclass pub;
+            nh.getParam("/control_node/height",height);
+            nh.getParam("/control_node/Xmoving",xmoving);
+            nh.getParam("/control_node/Ymoving",ymoving);
 
-                    
-    //시작점으로가기
-    pub.uav0(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2+ymoving);
-    pub.uav1(pub.rightlower.x+xmoving,(pub.rightlower.y+pub.leftupper.y)/2-ymoving);
-    
-    while(abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2&&abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.2&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.2){
-        pub.goTo0(); pub.goTo1();
-    }
+            float x_march=height*xmoving;
+            float y_march=height*ymoving;
+
+            float y_length = pub.leftupper.y - pub.rightlower.y;
+            float x_length = pub.leftupper.x - pub.rightlower.x;
+
+            float x_uav0 = x_march + pub.rightlower.x;
+            float x_uav1 = x_uav0;
+            float y_uav0 = (pub.rightlower.y+pub.leftupper.y)/2+y_march;//4.2*height + pub.rightlower.y;
+            float y_uav1 = (pub.rightlower.y+pub.leftupper.y)/2-y_march ;//2*height + pub.rightlower.y;
+
+     
+            int index = ceil(x_length / x_march);
+            int index2= ceil((y_length/2) / y_march);
 
 
-    bool count=0;
+        int flag,mode;
 
-    while(ros::ok()){
-        nh.getParam("/control_node/start",count);
+        nh.getParam("/control_node/start",flag);
+        nh.getParam("/control_node/mode",mode);
 
-        if(1){
-            while(abs(pub.leftupper.y-cur_local0.pose.position.y)>0.1&&abs(pub.rightlower.y-cur_local1.pose.position.y)>0.1){
-                while(abs(uav0_target.pose.position.x-cur_local0.pose.position.x)>0.1&&abs(uav1_target.pose.position.x-cur_local1.pose.position.x)>0.1){
-                    pub.goTo0(); pub.goTo1();
-                }
+        if(flag&&!mode){ //ㄹ형식 탐색
+                //시작점으로가기
+            //     pub.uav0(pub.rightlower.x+xmoving0,(pub.rightlower.y+pub.leftupper.y)/2+ymoving0);
+            //     pub.uav1(pub.rightlower.x+xmoving1,(pub.rightlower.y+pub.leftupper.y)/2-ymoving1);
+
             
-                ros::Duration(0.1).sleep();
-                //imwrite();
+            // while(fabs(pub.leftupper.y-cur_local0.pose.position.y)>0.5&&fabs(pub.rightlower.y-cur_local1.pose.position.y)>0.5){ //y 끝까지 갈때까지
+            //     // if(!(pub.isArriving())){
+            //         pub.goTo0(); pub.goTo1();
+            //     // }
+            
+            //     if(!(pub.isArriving())){
+            //         ros::spinOnce();
+            //         rate.sleep();
+            //         continue;
+            //     }
+            //     //imwrite();
             
 
-                if(abs(uav0_target.pose.position.x-pub.leftupper.x)<0.1){
-                    uav0_target.pose.position.y+=ymoving;
-                    xmoving=-xmoving;
-                }
-                else{
-                    uav0_target.pose.position.x+=xmoving;
-                }
+            //     if((fabs(uav0_target.pose.position.x-pub.leftupper.x)<0.5 && xmoving0>0 )|| (fabs(uav0_target.pose.position.x-pub.rightlower.x)<0.5 && xmoving0<0)){ //uav0가 x 끝까지 갔는가?
+            //         uav0_target.pose.position.y+=ymoving0;
+            //         xmoving0=-xmoving0;
+            //     }
+            //     else{
+            //         uav0_target.pose.position.x+=xmoving0;
+            //     }
                 
-                if(abs(uav1_target.pose.position.x-pub.leftupper.x)<0.1){
-                    uav1_target.pose.position.y-=ymoving;
-                    xmoving=-xmoving;
+            //     if((fabs(uav1_target.pose.position.x-pub.leftupper.x)<0.5 && xmoving1>0 )|| (fabs(uav1_target.pose.position.x-pub.rightlower.x)<0.5 && xmoving1<0)){ //uav1가 x 끝까지 갔는가?
+            //         uav1_target.pose.position.y-=ymoving1;
+            //         xmoving1=-xmoving1;
+            //     }
+            //     else{
+            //         uav1_target.pose.position.x+=xmoving1;
+            //     }
+            //     ros::spinOnce();
+            //     rate.sleep();                
+            // }
+            // nh.setParam("/control_node/start",false);
+            for(int j=0; j<index2; j++){
+                for(int i=0; i<index; i++){
+                    for(int count=0; count<50; ){
+                        pub.uav0(x_uav0,y_uav0);
+                        pub.uav1(x_uav1,y_uav1);
+
+                        pub.goTo0(); pub.goTo1();
+
+
+                        if(pub.isArriving()){
+                            count++;
+                        }
+
+                        if(count > 25){
+                            capture_sign_pub.publish(caputre_sign);
+                        }
+
+                        ros::spinOnce();
+                        rate.sleep();
+                    }
+                    ROS_INFO("March!");
+                    x_uav0 = x_uav0 + x_march;
+                    x_uav1 = x_uav1 + x_march;
+                    caputre_sign.data = caputre_sign.data + 1.0;
                 }
-                else{
-                    uav1_target.pose.position.x+=xmoving;
+                x_uav0 = x_uav0 - x_march;
+                x_uav1 = x_uav1 - x_march;
+                x_march=-x_march;
+                y_uav0 += y_march;
+                y_uav1 -= y_march;
+            }
+
+            nh.setParam("/control_node/start",false);
+
+        }
+
+
+        else if(flag&&mode){// 일자탐색
+
+            for(int i=0; i<index; i++){
+                for(int count=0; count<50; ){
+                    pub.uav0(x_uav0,y_uav0);
+                    pub.uav1(x_uav1,y_uav1);
+
+                    pub.goTo0(); pub.goTo1();
+
+
+                    if(pub.isArriving()){
+                        count++;
+                    }
+
+                    if(count > 25){
+                        capture_sign_pub.publish(caputre_sign);
+                    }
+
+                    ros::spinOnce();
+                    rate.sleep();
                 }
+                ROS_INFO("March!");
+                x_uav0 = x_uav0 + x_march;
+                x_uav1 = x_uav1 + x_march;
+                caputre_sign.data = caputre_sign.data + 1.0;
             }
             nh.setParam("/control_node/start",false);
+
         }
 
         ros::spinOnce();
         rate.sleep();
 
     }
-
-
-    
-
-}
-
-
-
-
-
-
-
-
-
-// void runOp(){
-//     if(cur_local0.pose.position.x-rightlower.y<leftupper.y-cur_local0.pose.position.y&&cur_local1.pose.position.y-rightlower.y<leftupper.y-cur_local1.pose.position.y){
-//         uav0(cur_local0.pose.position.x,leftupper.y-ymargin);
-//         uav1(cur_local1.pose.position.y,leftupper.y-ymargin);
-//         targetpub0.publish(uav0_target);
-//         targetpub1.publish(uav1_target);
-        
-//         if(cur_local0.pose.position.x>rightlower.x&&leftupper.x<cur_local1.pose.position.x){
-//             uav0(cur_local0.pose.position.x-xmargin*2,cur_local0.pose.position.y);
-//             uav1(cur_local1.pose.position.x+xmargin*2,cur_local1.pose.position.y);
-
-//         }
-//     }
-//     else if(cur_local0.pose.position.y-rightlower.y>leftupper.y-cur_local0.pose.position.y&&cur_local1.pose.position.y-rightlower.y>leftupper.y-cur_local1.pose.position.y){
-//         uav0(cur_local0.pose.position.x,rightlower.y+ymargin);
-//         uav1(cur_local1.pose.position.x,rightlower.y+ymargin);
-//         targetpub0.publish(uav0_target);
-//         targetpub1.publish(uav1_target);
-        
-//         if(cur_local0.pose.position.x>rightlower.x&&leftupper.x<cur_local1.pose.position.x){
-//             uav0(cur_local0.pose.position.x-xmargin*2,cur_local0.pose.position.y);
-//             uav1(cur_local1.pose.position.x+xmargin*2,cur_local1.pose.position.y);
-
-//         }
-//     }
-// }
