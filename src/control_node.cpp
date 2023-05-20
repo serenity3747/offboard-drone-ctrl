@@ -67,10 +67,10 @@ class pubclass{
 
 
 
-                nh_.getParam("/control_node/rightlower_x",rightlower.x);
-                nh_.getParam("/control_node/rightlower_y",rightlower.y);
-                nh_.getParam("/control_node/leftupper_x",leftupper.x);
-                nh_.getParam("/control_node/leftupper_y",leftupper.y);
+                nh_.getParam("/control_node/rightlower/x",rightlower.x);
+                nh_.getParam("/control_node/rightlower/y",rightlower.y);
+                nh_.getParam("/control_node/leftupper/x",leftupper.x);
+                nh_.getParam("/control_node/leftupper/y",leftupper.y);
 
         }
 
@@ -145,7 +145,16 @@ class pubclass{
 
             else return false;
         }
-            
+        bool isArrivingOnly0(){
+            if((fabs(uav0_target.pose.position.x - cur_local0.pose.position.x) < 0.5)
+            && (fabs(uav0_target.pose.position.y - cur_local0.pose.position.y) < 0.5)
+            && (fabs(uav0_target.pose.position.z - cur_local0.pose.position.z) < 0.5)){
+                return true;
+            }
+
+            else return false;
+        }
+                        
 
     private:
         ros::NodeHandle nh_;
@@ -207,69 +216,53 @@ int main(int argc, char **argv)
     ros::Rate rate(20.0);
 
     pubclass pub;
-            nh.getParam("/control_node/height",height);
-            nh.getParam("/control_node/Xmoving",xmoving);
-            nh.getParam("/control_node/Ymoving",ymoving);
-
-            float x_march=height*xmoving;
-            float y_march=height*ymoving;
-
-            float y_length = pub.leftupper.y - pub.rightlower.y;
-            float x_length = pub.leftupper.x - pub.rightlower.x;
-
-            float x_uav0 = x_march + pub.rightlower.x;
-            float x_uav1 = x_uav0;
-            float y_uav0 = (pub.rightlower.y+pub.leftupper.y)/2+y_march;//4.2*height + pub.rightlower.y;
-            float y_uav1 = (pub.rightlower.y+pub.leftupper.y)/2-y_march ;//2*height + pub.rightlower.y;
-
-     
-            int index = ceil(x_length / x_march);
-            int index2= ceil((y_length/2) / y_march);
 
 
-        int flag,mode;
+    float x_march, y_march;
+    float x_uav0, x_uav1;
+    float y_uav0, y_uav1;
+    float x_length, y_length;
+    int index,index2,index3;
+    int flag,mode;
 
-        nh.getParam("/control_node/start",flag);
+    while(ros::ok){
+
+        nh.getParam("/control_node/height",height);
+        nh.getParam("/control_node/Xmoving",xmoving);
+        nh.getParam("/control_node/Ymoving",ymoving);
+
+
+        // 높이 비례하여 march 거리 연산
+        x_march=height*xmoving;
+        y_march=height*ymoving;
+
+        // 영역 길이 
+        y_length = pub.leftupper.y - pub.rightlower.y;
+        x_length = pub.leftupper.x - pub.rightlower.x;
+
+        // loop에 사용될 index 설정
+        index = ceil(x_length / x_march);
+        index2= ceil((y_length/2) / y_march);
+        index3= ceil(y_length/y_march);
+
+
+        nh.getParam("/control_node/flag",flag);
         nh.getParam("/control_node/mode",mode);
+        
 
-        if(flag&&!mode){ //ㄹ형식 탐색
-                //시작점으로가기
-            //     pub.uav0(pub.rightlower.x+xmoving0,(pub.rightlower.y+pub.leftupper.y)/2+ymoving0);
-            //     pub.uav1(pub.rightlower.x+xmoving1,(pub.rightlower.y+pub.leftupper.y)/2-ymoving1);
 
-            
-            // while(fabs(pub.leftupper.y-cur_local0.pose.position.y)>0.5&&fabs(pub.rightlower.y-cur_local1.pose.position.y)>0.5){ //y 끝까지 갈때까지
-            //     // if(!(pub.isArriving())){
-            //         pub.goTo0(); pub.goTo1();
-            //     // }
-            
-            //     if(!(pub.isArriving())){
-            //         ros::spinOnce();
-            //         rate.sleep();
-            //         continue;
-            //     }
-            //     //imwrite();
-            
+        if(!flag){
+                pub.uav0(0.0,0.0);
+                pub.uav1(0.0,-2.0);
+                pub.goTo0(); pub.goTo1();
+        }
 
-            //     if((fabs(uav0_target.pose.position.x-pub.leftupper.x)<0.5 && xmoving0>0 )|| (fabs(uav0_target.pose.position.x-pub.rightlower.x)<0.5 && xmoving0<0)){ //uav0가 x 끝까지 갔는가?
-            //         uav0_target.pose.position.y+=ymoving0;
-            //         xmoving0=-xmoving0;
-            //     }
-            //     else{
-            //         uav0_target.pose.position.x+=xmoving0;
-            //     }
-                
-            //     if((fabs(uav1_target.pose.position.x-pub.leftupper.x)<0.5 && xmoving1>0 )|| (fabs(uav1_target.pose.position.x-pub.rightlower.x)<0.5 && xmoving1<0)){ //uav1가 x 끝까지 갔는가?
-            //         uav1_target.pose.position.y-=ymoving1;
-            //         xmoving1=-xmoving1;
-            //     }
-            //     else{
-            //         uav1_target.pose.position.x+=xmoving1;
-            //     }
-            //     ros::spinOnce();
-            //     rate.sleep();                
-            // }
-            // nh.setParam("/control_node/start",false);
+        if(flag&&mode==0){ //ㄹ형식 탐색
+            x_uav0 = x_march + pub.rightlower.x;
+            x_uav1 = x_uav0;
+            y_uav0 = (pub.rightlower.y+pub.leftupper.y)/2+y_march;//4.2*height + pub.rightlower.y;
+            y_uav1 = (pub.rightlower.y+pub.leftupper.y)/2-y_march ;//2*height + pub.rightlower.y;
+
             for(int j=0; j<index2; j++){
                 for(int i=0; i<index; i++){
                     for(int count=0; count<50; ){
@@ -302,13 +295,14 @@ int main(int argc, char **argv)
                 y_uav1 -= y_march;
             }
 
-            nh.setParam("/control_node/start",false);
-
+            // nh.setParam("/control_node/start",false);
         }
 
-
-
-        else if(flag&&mode){// 일자탐색
+        else if(flag&&mode==1){// 일자탐색
+            x_uav0 = x_march;//x_march + pub.rightlower.x;
+            x_uav1 = x_uav0;
+            y_uav0 = (pub.rightlower.y+pub.leftupper.y)/2+y_march;//4.2*height + pub.rightlower.y;
+            y_uav1 = (pub.rightlower.y+pub.leftupper.y)/2-y_march ;//2*height + pub.rightlower.y;
 
             for(int i=0; i<index; i++){
                 for(int count=0; count<50; ){
@@ -334,11 +328,76 @@ int main(int argc, char **argv)
                 x_uav1 = x_uav1 + x_march;
                 caputre_sign.data = caputre_sign.data + 1.0;
             }
-            nh.setParam("/control_node/start",false);
+            // nh.setParam("/control_node/start",false);
 
         }
 
+        else if(flag&&mode==2){ //같이가는 ㄹ형식 탐색
+            x_uav0 = x_march + pub.rightlower.x;
+            x_uav1 = x_uav0;
+            y_uav0 = pub.rightlower.y+3*y_march;//4.2*height + pub.rightlower.y;
+            y_uav1 = pub.rightlower.y+y_march ;//2*height + pub.rightlower.y;
+            for(int j=0; j<index2; j++){
+                for(int i=0; i<index; i++){
+                    for(int count=0; count<50; ){
+                        pub.uav0(x_uav0,y_uav0);
+                        pub.uav1(x_uav1,y_uav1);
+
+                        pub.goTo0(); pub.goTo1();
+
+
+                        if(pub.isArriving()){
+                            count++;
+                        }
+
+                        if(count > 25){
+                            capture_sign_pub.publish(caputre_sign);
+                        }
+
+                        ros::spinOnce();
+                        rate.sleep();
+                    }
+                    ROS_INFO("March!");
+                    x_uav0 = x_uav0 + x_march;
+                    x_uav1 = x_uav1 + x_march;
+                    caputre_sign.data = caputre_sign.data + 1.0;
+                }
+                x_uav0 = x_uav0 - x_march;
+                x_uav1 = x_uav1 - x_march;
+                x_march=-x_march;
+                y_uav0 += 2*y_march;
+                y_uav1 += 2*y_march;
+            }
+
+            // nh.setParam("/control_node/start",false);
+
+        }
+    //     else if(flag&&mode==3){//uav0만 멈추지않고 움직이기
+    //         x_uav0=pub.leftupper.x;
+    //         y_uav0=pub.leftupper.y;
+
+    //         for(int j=0;j<index3;j++){
+    //             pub.uav0(x_uav0,y_uav0);
+
+
+    //             while(!(pub.isArrivingOnly0())){
+    //                     capture_sign_pub.publish(caputre_sign);
+    //             }
+    //             y_uav0+=y_march;
+    //             pub.uav0(x_uav0,y_uav0);
+
+    //             if(x_uav0==pub.leftupper.x) x_uav0=pub.rightlower.x;
+    //             else if(x_uav0==pub.rightlower.x) x_uav0=pub.leftupper.x;
+
+    //             ros::spinOnce();
+    //             rate.sleep();
+
+    //         }
+    //    }
+
+        nh.setParam("/control_node/flag",0);
         ros::spinOnce();
         rate.sleep();
-
     }
+
+}

@@ -1,13 +1,18 @@
-start: 1
+flag: 0
 
-# mode 0 : zigzag / mode 1 : straight
-mode: 0
-
-rightlower_x: 0.0
-rightlower_y: -20.0
-leftupper_x: 10.0
-leftupper_y: 20.0
+# mode 0 : zigzag / mode 1 : straight / mode 2 : zigzag together / mode3 : landscape
+mode: 2
 
 height: 3
 Xmoving: 0.45
 Ymoving: 0.56
+
+
+rightlower: 
+  x: 0.0
+  y: -10.0
+leftupper:
+  x: 5.0
+  y: 10.0
+
+
