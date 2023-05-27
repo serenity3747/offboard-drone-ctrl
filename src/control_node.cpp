@@ -365,8 +365,8 @@ int main(int argc, char **argv)
                 x_uav0 = x_uav0 - x_march;
                 x_uav1 = x_uav1 - x_march;
                 x_march=-x_march;
-                y_uav0 += 2*y_march;
-                y_uav1 += 2*y_march;
+                y_uav0 += 3*y_march;
+                y_uav1 += 3*y_march;
             }
 
             // nh.setParam("/control_node/start",false);
